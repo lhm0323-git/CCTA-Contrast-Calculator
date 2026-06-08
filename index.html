@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="zh-TW" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CCTA 顯影劑劑量標準化計算工具</title>
+  <meta name="description" content="高品質健檢 CCTA 顯影劑與生理鹽水精密注射劑量及流速計算工具，提供極速計算、總體重劑量計算及心率自動適應協定。">
+  <link rel="stylesheet" href="style.css">
+  <!-- Lucide Icons for modern, slick interface icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+  <div class="app-container">
+    
+    <!-- Header Section -->
+    <header>
+      <div class="brand-section">
+        <div class="logo-badge">CT</div>
+        <div class="brand-title">
+          <h1>CCTA Contrast Calculator</h1>
+          <p>冠狀動脈造影顯影劑精準劑量與流速計算系統 (80 kVp 低劑量 Protocol)</p>
+        </div>
+      </div>
+      
+      <div class="header-controls">
+        <button id="themeToggleBtn" class="btn-toggle-theme" title="切換深淺色主題">
+          <i data-lucide="sun"></i>
+          <span>切換主題</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main 2-Column Grid Workspace -->
+    <main class="main-grid-2col">
+      
+      <!-- LEFT COLUMN: Inputs (Core & Safety) -->
+      <div class="layout-column">
+        
+        <!-- CARD 1: Core Parameters (Always Visible) -->
+        <section class="glass-panel core-card">
+          <div class="panel-header">
+            <h2><i data-lucide="calculator" class="icon-accent-cyan"></i> <span>快速劑量計算參數</span></h2>
+            <span class="badge-accent">Core Inputs</span>
+          </div>
+          
+          <!-- Gender Selector -->
+          <div class="form-group">
+            <label><i data-lucide="users"></i> 生理性別</label>
+            <div class="gender-selector">
+              <button type="button" class="gender-btn active" data-gender="male" id="genderMale">男 (Male)</button>
+              <button type="button" class="gender-btn" data-gender="female" id="genderFemale">女 (Female)</button>
+            </div>
+          </div>
+          
+          <!-- Height, Weight, Heart Rate in 3 Columns -->
+          <div class="form-group-row-3col">
+            <div class="form-group">
+              <label for="height"><i data-lucide="ruler"></i> 身高 (cm)</label>
+              <input type="number" id="height" class="input-ctrl input-huge" placeholder="cm" min="100" max="250" value="172">
+            </div>
+            <div class="form-group">
+              <label for="weight"><i data-lucide="scale"></i> 體重 (kg)</label>
+              <input type="number" id="weight" class="input-ctrl input-huge" placeholder="kg" min="30" max="200" value="68">
+            </div>
+            <div class="form-group">
+              <label for="hr"><i data-lucide="heart-pulse"></i> 心跳 (bpm)</label>
+              <input type="number" id="hr" class="input-ctrl input-huge" placeholder="bpm" min="30" max="200" value="60">
+            </div>
+          </div>
+
+          <!-- HR Status message -->
+          <div class="hr-status-info" id="hrStatusInfo">
+            <i data-lucide="heart" class="heart-icon animate-pulse"></i>
+            <span id="hrStatusMsg">心跳正常 (常規 12 秒注射)</span>
+          </div>
+        </section>
+
+        <!-- CARD 2: Clinical eGFR & Safety Card (Collapsible) -->
+        <section class="accordion glass-panel collapsed-by-default">
+          <div class="accordion-trigger" id="egfrAccordionTrigger">
+            <h2><i data-lucide="shield-alert" class="icon-accent-orange"></i> <span>臨床安全卡控 (eGFR)</span></h2>
+            <i data-lucide="chevron-down" class="accordion-chevron"></i>
+          </div>
+          <div class="accordion-content">
+            <div class="form-group">
+              <label for="egfr"><i data-lucide="activity"></i> 腎功能指數 eGFR (mL/min/1.73m²)</label>
+              <input type="number" id="egfr" class="input-ctrl" placeholder="輸入 eGFR 數值" min="5" max="150" value="90">
+            </div>
+            
+            <div id="egfrCard" class="egfr-indicator-card safe">
+              <div class="egfr-header">
+                <span class="egfr-title-lbl">eGFR 安全評估</span>
+                <span id="egfrValueBadge" class="egfr-badge">eGFR 90</span>
+              </div>
+              <p id="egfrMessage" class="egfr-message">腎功能正常。允許執行常規 CCTA 顯影劑劑量注入協定。</p>
+              
+              <!-- Override Form for Kidney Danger -->
+              <div id="overrideContainer" class="override-container">
+                <label for="overrideReason"><i data-lucide="alert-triangle"></i> 覆核授權說明</label>
+                <input type="text" id="overridePhysician" class="input-ctrl" style="margin-bottom:0.4rem;" placeholder="授權醫師姓名">
+                <input type="text" id="overrideReason" class="input-ctrl" style="margin-bottom:0.4rem;" placeholder="緊急處置/洗腎患者覆核原因">
+                <button type="button" id="overrideSubmitBtn" class="btn-override">授權醫師覆核解鎖 (Force Override)</button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- CARD 3: HIS Integration Scanner Simulator (Collapsible) -->
+        <section class="accordion glass-panel collapsed-by-default">
+          <div class="accordion-trigger" id="hisAccordionTrigger">
+            <h2><i data-lucide="scan-face" class="icon-accent-purple"></i> <span>HIS 掃描條碼模擬載入</span></h2>
+            <i data-lucide="chevron-down" class="accordion-chevron"></i>
+          </div>
+          <div class="accordion-content">
+            <div class="scanner-card-inner">
+              <div class="laser-line" id="laserLine"></div>
+              <div class="scan-input-wrapper" style="margin-bottom: 1rem;">
+                <i data-lucide="scan" class="scan-icon"></i>
+                <input type="text" id="barcodeInput" class="scan-input" placeholder="病歷 ID (例: PAT-001)">
+                <button id="scanBtn" class="btn-scan btn-primary">載入</button>
+              </div>
+              <div class="scanner-status-container" style="margin-bottom: 1rem;">
+                <span id="scanStatus" class="scanner-status">
+                  <i data-lucide="check-circle-2"></i> 系統連線就緒，等待掃描檢查單條碼...
+                </span>
+                <span id="manualIndicator" class="manual-badge" style="display:none;">手動修改中</span>
+              </div>
+              
+              <div class="patient-presets-grid">
+                <div class="preset-chip" data-id="PAT-001">
+                  <span class="p-name">張志明 (男)</span>
+                  <span class="p-desc">172cm/68kg | eGFR 85 | HR 60</span>
+                </div>
+                <div class="preset-chip" data-id="PAT-002">
+                  <span class="p-name">林春嬌 (女)</span>
+                  <span class="p-desc">158cm/76kg | eGFR 52 | HR 72</span>
+                </div>
+                <div class="preset-chip" data-id="PAT-003">
+                  <span class="p-name">王大同 (男)</span>
+                  <span class="p-desc">180cm/92kg | eGFR 38 | HR 80</span>
+                </div>
+                <div class="preset-chip" data-id="PAT-004">
+                  <span class="p-name">陳淑芬 (女)</span>
+                  <span class="p-desc">152cm/48kg | eGFR 22 | HR 62</span>
+                </div>
+                <div class="preset-chip" data-id="PAT-005">
+                  <span class="p-name">李國華 (男)</span>
+                  <span class="p-desc">175cm/82kg | eGFR 65 | HR 76</span>
+                </div>
+              </div>
+
+              <div class="form-group-row" style="margin-top: 1rem; border-top: 1px solid var(--panel-border); padding-top: 1rem;">
+                <div class="form-group">
+                  <label for="patientId">病歷 ID</label>
+                  <input type="text" id="patientId" class="input-ctrl" value="PAT-001">
+                </div>
+                <div class="form-group">
+                  <label for="patientName">受試者姓名</label>
+                  <input type="text" id="patientName" class="input-ctrl" value="張志明">
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- RIGHT COLUMN: Outputs (SOP results & Advanced parameters) -->
+      <div class="layout-column">
+        
+        <!-- CARD 1: SOP Outputs -->
+        <section id="outputPanel" class="glass-panel output-panel">
+          
+          <!-- Clinical Safety Lockout Screen -->
+          <div class="lock-overlay" id="lockOverlay">
+            <div class="lock-icon"><i data-lucide="shield-alert"></i></div>
+            <h3>安全機制：劑量計算鎖定</h3>
+            <p id="lockOverlayMessage">受試者 eGFR 小於 30，屬重度腎功能不全。請會同專科醫師評估。</p>
+          </div>
+          
+          <div class="panel-header">
+            <h2><i data-lucide="play-circle" class="icon-accent-cyan"></i> <span>高壓注射器設定 SOP</span></h2>
+            <span class="badge-accent" style="background: rgba(6, 182, 212, 0.15); color: var(--accent-cyan);">Output Settings</span>
+          </div>
+          
+          <!-- Large Volume Display -->
+          <div class="dose-display-grid">
+            <div class="dose-card">
+              <span class="dose-lbl">A 針筒 - 建議劑量 (每5cc級距)</span>
+              <span id="outVolume" class="dose-val">0</span>
+              <span class="dose-unit">mL (cc)</span>
+            </div>
+            <div class="dose-card secondary-dose-card">
+              <span class="dose-lbl">A 針筒 - 建議流速 (每0.5cc/s級距)</span>
+              <span id="outFlowRate" class="dose-val secondary-dose-val">0.0</span>
+              <span class="dose-unit">mL/s</span>
+            </div>
+          </div>
+          
+          <!-- Detailed Protocols -->
+          <div class="protocol-details">
+            <div class="detail-row">
+              <span class="detail-lbl">B 針 (生理食鹽水) 沖洗量</span>
+              <span class="detail-val">
+                <span id="outSaline">35</span> <span style="font-size:0.8rem; font-weight:normal; color:var(--text-muted);">mL</span>
+              </span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-lbl">B 針 (生理食鹽水) 流速</span>
+              <span class="detail-val">
+                <span id="outSalineFlowRate">0.0</span> <span style="font-size:0.8rem; font-weight:normal; color:var(--text-muted);">mL/s</span>
+              </span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-lbl">實際注射秒數 (Volume / Rate)</span>
+              <span class="detail-val">
+                <span id="outDuration">12.0</span> <span style="font-size:0.8rem; font-weight:normal; color:var(--text-muted);">秒</span>
+              </span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-lbl">實際碘流速檢核 (IDR)</span>
+              <span class="detail-val">
+                <span id="outIdr">0.00</span> <span style="font-size:0.8rem; font-weight:normal; color:var(--text-muted); margin-right: 5px;">g I/s</span>
+                <span id="idrBadge" class="idr-badge safe">OK</span>
+              </span>
+            </div>
+          </div>
+        </section>
+
+        <!-- CARD 2: Advanced Settings (Collapsible) -->
+        <section class="accordion glass-panel collapsed-by-default">
+          <div class="accordion-trigger" id="settingsAccordionTrigger">
+            <h2><i data-lucide="sliders-horizontal" class="icon-accent-indigo"></i> <span>進階顯影協定與係數</span></h2>
+            <i data-lucide="chevron-down" class="accordion-chevron"></i>
+          </div>
+          <div class="accordion-content">
+            
+            <!-- Display calculated intermediate metrics (simplified, read-only) -->
+            <div class="intermediate-metrics-box">
+              <div class="metric-mini-row">
+                <span class="mini-lbl">實測總體重:</span>
+                <strong id="miniWeight">68.0</strong> <span class="mini-unit">kg</span>
+              </div>
+              <div class="metric-mini-row">
+                <span class="mini-lbl">身體質量指數 BMI:</span>
+                <strong id="miniBmi">23.0</strong> <span class="mini-unit">kg/m²</span>
+              </div>
+              <div class="metric-mini-row">
+                <span class="mini-lbl">目標總注入碘量:</span>
+                <strong id="miniIodine">18.36</strong> <span class="mini-unit">g Iodine</span>
+              </div>
+            </div>
+
+            <!-- Contrast Product Selection -->
+            <div class="form-group" style="margin-top: 0.5rem;">
+              <label for="contrastSelect"><i data-lucide="droplet"></i> 選用顯影劑濃度品項</label>
+              <select id="contrastSelect" class="input-ctrl">
+                <option value="350">Xenetix 350 (350 mg I/mL)</option>
+                <option value="370" selected>Iopamiro 370 (370 mg I/mL)</option>
+              </select>
+            </div>
+
+            <!-- Scan Voltage Select -->
+            <div class="form-group">
+              <label for="scanVoltage"><i data-lucide="zap"></i> 掃描電壓設定 (Somatom Force)</label>
+              <select id="scanVoltage" class="input-ctrl">
+                <option value="70">70 kVp (極低劑量 - 碘係數 ×0.8)</option>
+                <option value="80" selected>80 kVp (標準低劑量 - 預設)</option>
+                <option value="100">100 kVp (中高電壓 - 碘係數 ×1.2)</option>
+                <option value="120">120 kVp (常規電壓 - 碘係數 ×1.4)</option>
+              </select>
+            </div>
+
+            <!-- Sliders for coefficients -->
+            <div class="slider-group">
+              <div class="slider-header">
+                <span>總體重 碘劑量係數 (mg I/kg)</span>
+                <span id="weightCoefVal" class="slider-val">270 mg</span>
+              </div>
+              <input type="range" id="weightCoefSlider" class="range-ctrl" min="200" max="320" value="270" step="5">
+            </div>
+
+            <div class="slider-group">
+              <div class="slider-header">
+                <span>目標注射秒數 (手動覆蓋心率設定)</span>
+                <span id="injectDurationVal" class="slider-val">12s</span>
+              </div>
+              <input type="range" id="injectDurationSlider" class="range-ctrl" min="8" max="16" value="12" step="0.5">
+            </div>
+
+            <div class="slider-group">
+              <div class="slider-header">
+                <span>B 針生理食鹽水沖洗量</span>
+                <span id="salineVolumeVal" class="slider-val">35 cc</span>
+              </div>
+              <input type="range" id="salineVolumeSlider" class="range-ctrl" min="20" max="60" value="35" step="5">
+            </div>
+          </div>
+        </section>
+        
+        <!-- CARD 3: Override History Log (Collapsible) -->
+        <section class="accordion glass-panel collapsed-by-default">
+          <div class="accordion-trigger" id="auditAccordionTrigger">
+            <h2><i data-lucide="history" class="icon-accent-muted"></i> <span>解鎖覆核操作紀錄</span></h2>
+            <i data-lucide="chevron-down" class="accordion-chevron"></i>
+          </div>
+          <div class="accordion-content">
+            <div class="audit-list" id="auditList">
+              <div class="audit-item" style="border:none; text-align:center; justify-content:center; color:var(--text-muted);">
+                暫無覆核紀錄
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </div>
+
+    </main>
+    
+  </div>
+
+  <!-- App scripts module loads -->
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,1050 @@
+/* ==========================================================================
+   CCTA Contrast Dose Calculator - Premium Glassmorphism Design System
+   ========================================================================== */
+
+/* Import Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
+
+:root {
+  /* Color Tokens - Dark Mode (Default) */
+  --bg-gradient: radial-gradient(circle at 10% 20%, rgba(15, 20, 36, 1) 0%, rgba(9, 11, 20, 1) 90.1%);
+  --panel-bg: rgba(22, 28, 45, 0.45);
+  --panel-border: rgba(255, 255, 255, 0.08);
+  --input-bg: rgba(13, 17, 28, 0.6);
+  --input-border: rgba(255, 255, 255, 0.12);
+  --input-focus: rgba(99, 102, 241, 0.5); /* Indigo focus glow */
+  
+  --text-primary: #F3F4F6;   /* Gray 100 */
+  --text-secondary: #9CA3AF; /* Gray 400 */
+  --text-muted: #6B7280;     /* Gray 500 */
+  
+  /* Accent Colors */
+  --accent-cyan: #06B6D4;
+  --accent-blue: #3B82F6;
+  --accent-indigo: #6366F1;
+  --accent-purple: #8B5CF6;
+  
+  /* Clinical Safety Color Scales */
+  --color-safe: #10B981;     /* Emerald 500 */
+  --color-safe-bg: rgba(16, 185, 129, 0.12);
+  --color-safe-border: rgba(16, 185, 129, 0.3);
+  
+  --color-warn: #F59E0B;     /* Amber 500 */
+  --color-warn-bg: rgba(245, 158, 11, 0.12);
+  --color-warn-border: rgba(245, 158, 11, 0.3);
+  
+  --color-danger: #EF4444;   /* Red 500 */
+  --color-danger-bg: rgba(239, 68, 68, 0.15);
+  --color-danger-border: rgba(239, 68, 68, 0.4);
+  
+  /* Shadows */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.5);
+  --glow-cyan: 0 0 15px rgba(6, 182, 212, 0.4);
+  --glow-indigo: 0 0 15px rgba(99, 102, 241, 0.4);
+  --glow-danger: 0 0 20px rgba(239, 68, 68, 0.45);
+  
+  /* UI Constants */
+  --radius-lg: 16px;
+  --radius-md: 10px;
+  --radius-sm: 6px;
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Light Mode Theme Variables */
+[data-theme="light"] {
+  --bg-gradient: linear-gradient(135deg, #F0F4FA 0%, #E2EAF4 100%);
+  --panel-bg: rgba(255, 255, 255, 0.75);
+  --panel-border: rgba(0, 0, 0, 0.07);
+  --input-bg: rgba(255, 255, 255, 0.9);
+  --input-border: rgba(0, 0, 0, 0.12);
+  --input-focus: rgba(99, 102, 241, 0.3);
+  
+  --text-primary: #1E293B;   /* Slate 800 */
+  --text-secondary: #475569; /* Slate 600 */
+  --text-muted: #64748B;     /* Slate 500 */
+  
+  --shadow-sm: 0 2px 8px rgba(99, 102, 241, 0.05);
+  --shadow-md: 0 8px 24px rgba(99, 102, 241, 0.08);
+  --shadow-lg: 0 16px 40px rgba(99, 102, 241, 0.12);
+  --glow-cyan: 0 0 15px rgba(6, 182, 212, 0.25);
+  --glow-indigo: 0 0 15px rgba(99, 102, 241, 0.25);
+}
+
+/* ==========================================================================
+   Base Elements
+   ========================================================================== */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg-gradient);
+  color: var(--text-primary);
+  min-height: 100vh;
+  line-height: 1.5;
+  padding: 1.5rem 1rem;
+  overflow-x: hidden;
+  transition: var(--transition);
+}
+
+h1, h2, h3, h4 {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+/* ==========================================================================
+   Layout Wrapper
+   ========================================================================== */
+.app-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* ==========================================================================
+   Header Component
+   ========================================================================== */
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.25rem 0.5rem;
+}
+
+.brand-section {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.logo-badge {
+  background: linear-gradient(135deg, var(--accent-cyan), var(--accent-indigo));
+  color: white;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  font-weight: 800;
+  box-shadow: var(--glow-cyan);
+}
+
+.brand-title h1 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  background: linear-gradient(to right, var(--accent-cyan), var(--accent-purple));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.brand-title p {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* Theme toggle button styling */
+.btn-toggle-theme {
+  padding: 0.5rem 0.85rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--panel-border);
+  background: var(--panel-bg);
+  color: var(--text-primary);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: var(--transition);
+  backdrop-filter: blur(10px);
+}
+
+.btn-toggle-theme:hover {
+  background: rgba(99, 102, 241, 0.15);
+  border-color: var(--accent-indigo);
+  transform: translateY(-1px);
+}
+
+/* ==========================================================================
+   2-Column Layout Grid
+   ========================================================================== */
+.main-grid-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+
+.layout-column {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+@media (max-width: 820px) {
+  .main-grid-2col {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==========================================================================
+   Card Component System
+   ========================================================================== */
+.glass-panel {
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(20px);
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  transition: var(--transition);
+}
+
+.glass-panel:hover {
+  box-shadow: var(--shadow-lg);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.panel-header {
+  border-bottom: 1px solid var(--panel-border);
+  padding-bottom: 0.6rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.panel-header h2 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* Icon Colors and Badges */
+.icon-accent-cyan { color: var(--accent-cyan); }
+.icon-accent-orange { color: var(--color-warn); }
+.icon-accent-purple { color: var(--accent-purple); }
+.icon-accent-indigo { color: var(--accent-indigo); }
+.icon-accent-muted { color: var(--text-muted); }
+
+.badge-accent {
+  background: rgba(6, 182, 212, 0.12);
+  color: var(--accent-cyan);
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.2rem 0.5rem;
+  border-radius: 20px;
+  letter-spacing: 0.05em;
+}
+
+/* ==========================================================================
+   Form Fields
+   ========================================================================== */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.form-group-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.form-group-row-3col {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.75rem;
+}
+
+label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.input-ctrl {
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-md);
+  padding: 0.6rem 0.8rem;
+  color: var(--text-primary);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.92rem;
+  transition: var(--transition);
+  width: 100%;
+}
+
+.input-ctrl:focus {
+  outline: none;
+  border-color: var(--accent-cyan);
+  box-shadow: var(--glow-cyan);
+}
+
+/* Huge Core Inputs */
+.core-card {
+  border: 1.5px solid rgba(6, 182, 212, 0.25);
+  background: linear-gradient(180deg, var(--panel-bg) 0%, rgba(6, 182, 212, 0.02) 100%);
+}
+
+.input-huge {
+  font-size: 1.25rem;
+  padding: 0.7rem 0.5rem;
+  font-weight: 700;
+  text-align: center;
+  font-family: 'Outfit', sans-serif;
+  border-color: rgba(6, 182, 212, 0.3);
+  color: var(--accent-cyan);
+}
+
+.input-huge:focus {
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 15px rgba(6, 182, 212, 0.3);
+}
+
+select.input-ctrl {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 1.1rem;
+  padding-right: 2.2rem;
+}
+
+/* Radio Group (Gender selector) */
+.gender-selector {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.gender-btn {
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-md);
+  padding: 0.65rem;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: center;
+  transition: var(--transition);
+}
+
+.gender-btn.active {
+  background: rgba(6, 182, 212, 0.15);
+  border-color: var(--accent-cyan);
+  color: var(--text-primary);
+  font-weight: 700;
+  box-shadow: 0 0 10px rgba(6, 182, 212, 0.1);
+}
+
+/* Heart Rate Status Banner */
+.hr-status-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  border-radius: var(--radius-md);
+  padding: 0.55rem 0.75rem;
+  margin-top: 0.4rem;
+  border: 1px solid transparent;
+  transition: var(--transition);
+}
+
+.hr-status-info.normal {
+  color: var(--color-safe);
+  background: var(--color-safe-bg);
+  border-color: var(--color-safe-border);
+}
+.hr-status-info.normal .heart-icon {
+  fill: var(--color-safe);
+  color: var(--color-safe);
+}
+
+.hr-status-info.fast {
+  color: var(--color-warn);
+  background: var(--color-warn-bg);
+  border-color: var(--color-warn-border);
+}
+.hr-status-info.fast .heart-icon {
+  fill: var(--color-warn);
+  color: var(--color-warn);
+  animation: heartPulseFast 1s infinite;
+}
+
+.hr-status-info.very-fast {
+  color: var(--color-danger);
+  background: var(--color-danger-bg);
+  border-color: var(--color-danger-border);
+}
+.hr-status-info.very-fast .heart-icon {
+  fill: var(--color-danger);
+  color: var(--color-danger);
+  animation: heartPulseFast 0.5s infinite;
+}
+
+.heart-icon {
+  width: 14px;
+  height: 14px;
+  transition: var(--transition);
+}
+
+@keyframes heartPulseFast {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.2); }
+  60% { transform: scale(0.9); }
+  100% { transform: scale(1); }
+}
+
+/* ==========================================================================
+   eGFR Clinical Alert Banner
+   ========================================================================== */
+.egfr-indicator-card {
+  padding: 0.85rem;
+  border-radius: var(--radius-md);
+  margin-top: 0.4rem;
+  border: 1px solid transparent;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  transition: var(--transition);
+}
+
+.egfr-indicator-card.safe {
+  background: var(--color-safe-bg);
+  border-color: var(--color-safe-border);
+}
+.egfr-indicator-card.safe .egfr-badge {
+  color: var(--color-safe);
+}
+
+.egfr-indicator-card.warn {
+  background: var(--color-warn-bg);
+  border-color: var(--color-warn-border);
+}
+.egfr-indicator-card.warn .egfr-badge {
+  color: var(--color-warn);
+}
+
+.egfr-indicator-card.danger {
+  background: var(--color-danger-bg);
+  border-color: var(--color-danger-border);
+  animation: pulseDangerGlow 2s infinite;
+}
+.egfr-indicator-card.danger .egfr-badge {
+  color: var(--color-danger);
+}
+
+.egfr-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.egfr-title-lbl {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.egfr-badge {
+  font-family: 'Outfit', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.egfr-message {
+  font-size: 0.78rem;
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+
+@keyframes pulseDangerGlow {
+  0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+  70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+/* Override Section for eGFR Danger State */
+.override-container {
+  display: none; /* Hidden unless eGFR Danger triggered */
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--color-danger-border);
+  padding: 0.65rem;
+  border-radius: var(--radius-sm);
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: 0.25rem;
+}
+
+.btn-override {
+  background: linear-gradient(135deg, var(--color-danger), #B91C1C);
+  color: white;
+  border: none;
+  font-weight: 700;
+  font-size: 0.82rem;
+  padding: 0.45rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-override:hover {
+  filter: brightness(1.1);
+  transform: scale(1.01);
+}
+
+/* ==========================================================================
+   Simulated Barcode Scanner Panel Inner Layout
+   ========================================================================== */
+.scanner-card-inner {
+  position: relative;
+  overflow: hidden;
+}
+
+.scan-input-wrapper {
+  position: relative;
+  display: flex;
+  gap: 0.4rem;
+}
+
+.scan-input {
+  flex: 1;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  color: var(--text-primary);
+  padding: 0.6rem 0.8rem;
+  padding-left: 2.2rem;
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+  font-family: 'Inter', sans-serif;
+  transition: var(--transition);
+}
+
+.scan-input:focus {
+  outline: none;
+  border-color: var(--accent-purple);
+  box-shadow: 0 0 10px rgba(139, 92, 246, 0.2);
+}
+
+.scan-icon {
+  position: absolute;
+  left: 0.65rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-secondary);
+}
+
+.btn-scan {
+  background: linear-gradient(135deg, var(--accent-purple), var(--accent-indigo));
+  color: white;
+  border: none;
+  font-weight: 700;
+  padding: 0.6rem 1rem;
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  transition: var(--transition);
+}
+
+.btn-scan:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.1);
+}
+
+.scanner-status-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.scanner-status {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  color: var(--accent-purple);
+  opacity: 0.85;
+}
+
+.manual-badge {
+  background: rgba(139, 92, 246, 0.12);
+  color: var(--accent-purple);
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.15rem 0.40rem;
+  border-radius: 4px;
+}
+
+/* Presets grid */
+.patient-presets-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.4rem;
+}
+
+.preset-chip {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--panel-border);
+  padding: 0.45rem;
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.preset-chip:hover {
+  background: rgba(139, 92, 246, 0.1);
+  border-color: var(--accent-purple);
+  color: var(--text-primary);
+}
+
+.preset-chip .p-name {
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.preset-chip .p-desc {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Scanner Laser Animation */
+.laser-line {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent-purple), transparent);
+  box-shadow: 0 0 10px var(--accent-purple);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.scanner-card-inner.scanning .laser-line {
+  animation: scanLaser 1.5s ease-in-out infinite;
+  opacity: 1;
+}
+
+@keyframes scanLaser {
+  0% { top: 0%; }
+  50% { top: 100%; }
+  100% { top: 0%; }
+}
+
+/* ==========================================================================
+   Accordion Component (Collapsible Cards)
+   ========================================================================== */
+.accordion {
+  border: 1px solid var(--panel-border);
+  background: var(--panel-bg);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  padding: 0 !important; /* Overriding glass-panel padding */
+}
+
+.accordion-trigger {
+  padding: 1rem 1.25rem;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  user-select: none;
+  transition: var(--transition);
+}
+
+.accordion-trigger h2 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.accordion-trigger:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.accordion-content {
+  padding: 1.25rem;
+  display: none; /* Toggled in JS */
+  flex-direction: column;
+  gap: 1rem;
+  border-top: 1px solid var(--panel-border);
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.accordion.expanded .accordion-content {
+  display: flex;
+}
+
+.accordion-chevron {
+  transition: transform 0.3s;
+  color: var(--text-secondary);
+}
+
+.accordion.expanded .accordion-chevron {
+  transform: rotate(180deg);
+}
+
+/* ==========================================================================
+   Advanced Sliders Group
+   ========================================================================== */
+.slider-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.slider-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+}
+
+.slider-val {
+  font-family: 'Outfit', sans-serif;
+  color: var(--accent-indigo);
+  font-weight: 700;
+}
+
+.range-ctrl {
+  width: 100%;
+  accent-color: var(--accent-indigo);
+  cursor: pointer;
+}
+
+/* Calculation Tab Switcher */
+.tabs-header {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border: 1px solid var(--panel-border);
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: var(--radius-md);
+  padding: 3px;
+  margin-top: 0.2rem;
+}
+
+.tab-btn {
+  padding: 0.5rem;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: 'Inter', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: var(--transition);
+  text-align: center;
+}
+
+.tab-btn.active {
+  background: var(--panel-bg);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Mini Metrics Display Box */
+.intermediate-metrics-box {
+  background: rgba(0, 0, 0, 0.18);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius-md);
+  padding: 0.65rem 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  font-size: 0.82rem;
+}
+
+.metric-mini-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.05);
+  padding-bottom: 0.25rem;
+}
+
+.metric-mini-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.mini-lbl {
+  color: var(--text-secondary);
+}
+
+.mini-unit {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  margin-left: 2px;
+}
+
+/* ==========================================================================
+   Output Column Styling
+   ========================================================================== */
+.output-panel {
+  border: 1.5px solid var(--panel-border);
+  position: relative;
+  background: linear-gradient(180deg, var(--panel-bg) 0%, rgba(6, 182, 212, 0.02) 100%);
+}
+
+.output-panel.locked {
+  border-color: var(--color-danger-border);
+}
+
+.lock-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(11, 15, 25, 0.88);
+  backdrop-filter: blur(8px);
+  border-radius: var(--radius-lg);
+  display: none; /* Toggled in JS */
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 1.5rem;
+  z-index: 10;
+  color: var(--text-primary);
+}
+
+.lock-overlay.active {
+  display: flex;
+}
+
+.lock-icon {
+  font-size: 2.2rem;
+  color: var(--color-danger);
+  margin-bottom: 0.75rem;
+  animation: pulseDangerGlow 2s infinite;
+  border-radius: 50%;
+  padding: 0.5rem;
+}
+
+.lock-overlay h3 {
+  font-size: 1.15rem;
+  margin-bottom: 0.4rem;
+  color: var(--color-danger);
+}
+
+.lock-overlay p {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  max-width: 260px;
+  margin-bottom: 1.25rem;
+}
+
+/* Dose Outputs Grid split */
+.dose-display-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+@media (max-width: 440px) {
+  .dose-display-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.dose-card {
+  background: rgba(6, 182, 212, 0.08);
+  border: 1px solid rgba(6, 182, 212, 0.2);
+  border-radius: var(--radius-md);
+  padding: 0.95rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.secondary-dose-card {
+  background: rgba(99, 102, 241, 0.06);
+  border-color: rgba(99, 102, 241, 0.18);
+}
+
+.dose-card::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg, transparent, rgba(6, 182, 212, 0.12), transparent);
+  transform: rotate(45deg);
+  pointer-events: none;
+}
+
+.dose-lbl {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  margin-bottom: 0.2rem;
+}
+
+.dose-val {
+  font-family: 'Outfit', sans-serif;
+  font-size: 2.5rem;
+  font-weight: 800;
+  line-height: 1.05;
+  background: linear-gradient(135deg, var(--text-primary), var(--accent-cyan));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin: 0.2rem 0;
+}
+
+.secondary-dose-val {
+  font-size: 2.2rem;
+  background: linear-gradient(135deg, var(--text-primary), var(--accent-indigo));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.dose-unit {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.protocol-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.55rem 0;
+  border-bottom: 1px dashed var(--panel-border);
+}
+
+.detail-row:last-child {
+  border-bottom: none;
+}
+
+.detail-lbl {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+
+.detail-val {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+/* IDR Quality Check Badge */
+.idr-badge {
+  padding: 0.15rem 0.45rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.idr-badge.safe {
+  background: var(--color-safe-bg);
+  border: 1px solid var(--color-safe-border);
+  color: var(--color-safe);
+}
+
+.idr-badge.warn {
+  background: var(--color-warn-bg);
+  border: 1px solid var(--color-warn-border);
+  color: var(--color-warn);
+}
+
+/* ==========================================================================
+   Logs Component (Audit History Trail)
+   ========================================================================== */
+.audit-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  max-height: 110px;
+  overflow-y: auto;
+  font-size: 0.72rem;
+}
+
+.audit-item {
+  background: rgba(0, 0, 0, 0.15);
+  border: 1px solid var(--panel-border);
+  padding: 0.35rem 0.5rem;
+  border-radius: var(--radius-sm);
+  display: flex;
+  justify-content: space-between;
+  color: var(--text-secondary);
+}
+
+.audit-time {
+  color: var(--accent-cyan);
+}
+
+.audit-msg {
+  flex: 1;
+  margin-left: 0.4rem;
+  font-weight: 500;
+}
+
+/* Scrollbar customize */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--panel-border);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--input-border);
+}
