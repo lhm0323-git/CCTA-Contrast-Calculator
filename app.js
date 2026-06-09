@@ -95,6 +95,8 @@ const state = {
   isOverrideActive: false,
   isScanning: false,
   isDurationManuallyOverridden: false,
+  isFlowRateManuallyOverridden: false,
+  manualFlowRate: 4.0,
   theme: "dark"
 };
 
@@ -135,6 +137,8 @@ const DOM = {
   weightCoefVal: document.getElementById("weightCoefVal"),
   injectDurationSlider: document.getElementById("injectDurationSlider"),
   injectDurationVal: document.getElementById("injectDurationVal"),
+  injectFlowRateSlider: document.getElementById("injectFlowRateSlider"),
+  injectFlowRateVal: document.getElementById("injectFlowRateVal"),
   salineVolumeSlider: document.getElementById("salineVolumeSlider"),
   salineVolumeVal: document.getElementById("salineVolumeVal"),
 
@@ -171,8 +175,11 @@ const DOM = {
   outSaline: document.getElementById("outSaline"),
   outSalineFlowRate: document.getElementById("outSalineFlowRate"),
   outDuration: document.getElementById("outDuration"),
+  durationBadge: document.getElementById("durationBadge"),
   outIdr: document.getElementById("outIdr"),
   idrBadge: document.getElementById("idrBadge"),
+  obesityPanel: document.getElementById("obesityPanel"),
+  obesityComparison: document.getElementById("obesityComparison"),
   
   // History logs
   auditList: document.getElementById("auditList")
@@ -195,6 +202,39 @@ function getVoltageFactor(kvp) {
     case 100: return 1.2;
     case 120: return 1.4;
     default: return 1.0;
+  }
+}
+
+function calculateLBM(gender, weight, height) {
+  const val = gender === "male" 
+    ? (0.32810 * weight + 0.33929 * height - 29.5336)
+    : (0.29569 * weight + 0.41813 * height - 43.2933);
+  return Math.max(val, 0);
+}
+
+function calculateIBW(gender, heightCm) {
+  const heightInches = heightCm / 2.54;
+  const val = gender === "male"
+    ? (50.0 + 2.3 * (heightInches - 60))
+    : (45.5 + 2.3 * (heightInches - 60));
+  return Math.max(val, 0);
+}
+
+function calculateAdjBW(gender, weight, heightCm) {
+  const lbm = calculateLBM(gender, weight, heightCm);
+  if (weight > lbm) {
+    return lbm + 0.4 * (weight - lbm);
+  }
+  return lbm;
+}
+
+function getIDRRange(kvp) {
+  switch (parseInt(kvp)) {
+    case 70: return { min: 1.2, max: 1.5 };
+    case 80: return { min: 1.4, max: 1.7 };
+    case 100: return { min: 1.6, max: 1.9 };
+    case 120: return { min: 1.8, max: 2.2 };
+    default: return { min: 1.4, max: 1.8 };
   }
 }
 
@@ -221,11 +261,108 @@ function updateCalculations() {
   // 2. Perform Calculations
   const bmi = calculateBMI(weight, height);
 
-  // Target iodine load based on Weight (in mg Iodine)
-  const iodineLoadWeightMg = weight * state.weightCoefficient * state.voltageMultiplier;
+  // Calculate LBM & AdjBW
+  const lbm = calculateLBM(state.gender, weight, height);
+  const adjbw = calculateAdjBW(state.gender, weight, height);
 
-  // 3. Heart Rate Automatic Duration Adaptation
-  if (!state.isDurationManuallyOverridden) {
+  // Check if patient is overweight/obese (BMI >= 25)
+  const isObeseOrOverweight = (bmi >= 25.0);
+  const calculationWeight = isObeseOrOverweight ? adjbw : weight;
+
+  // Target iodine load based on selected weight basis (TBW or ABW)
+  const iodineLoadWeightMg = calculationWeight * state.weightCoefficient * state.voltageMultiplier;
+
+  // Calculate Contrast Volume (rounded to nearest 5 cc, min 20 cc)
+  let rawContrastVolume = iodineLoadWeightMg / contrastConc;
+  if (rawContrastVolume < 0 || isNaN(rawContrastVolume)) rawContrastVolume = 0;
+
+  let contrastVolume = Math.round(rawContrastVolume / 5) * 5;
+  if (rawContrastVolume > 0 && contrastVolume < 20) {
+    contrastVolume = 20; // Clinical minimum safe threshold
+  }
+  if (rawContrastVolume === 0) {
+    contrastVolume = 0;
+  }
+
+  // Obesity Cap: BMI > 35 caps dose to 75cc
+  let isMorbidObesityCapApplied = false;
+  if (bmi > 35 && contrastVolume > 75) {
+    contrastVolume = 75;
+    isMorbidObesityCapApplied = true;
+  }
+
+  // Calculate comparative doses for rendering
+  const rawTbwVolume = weight * state.weightCoefficient * state.voltageMultiplier / contrastConc;
+  let tbwVolume = Math.round(rawTbwVolume / 5) * 5;
+  if (rawTbwVolume > 0 && tbwVolume < 20) tbwVolume = 20;
+  if (rawTbwVolume <= 0) tbwVolume = 0;
+
+  const rawLbmVolume = lbm * state.weightCoefficient * state.voltageMultiplier / contrastConc;
+  let lbmVolume = Math.round(rawLbmVolume / 5) * 5;
+  if (rawLbmVolume > 0 && lbmVolume < 20) lbmVolume = 20;
+  if (rawLbmVolume <= 0) lbmVolume = 0;
+
+  const rawAdjVolume = adjbw * state.weightCoefficient * state.voltageMultiplier / contrastConc;
+  let adjVolume = Math.round(rawAdjVolume / 5) * 5;
+  if (rawAdjVolume > 0 && adjVolume < 20) adjVolume = 20;
+  if (rawAdjVolume <= 0) adjVolume = 0;
+
+  // 3. Flow Rate and Injection Duration Calculations
+  const idrRange = getIDRRange(scanKvp);
+  const maxFlowRate = Math.floor((idrRange.max * 1000 / contrastConc) * 10) / 10;
+  
+  let flowRate = 0;
+  let isFlowRateClamped = false;
+  
+  if (state.isFlowRateManuallyOverridden) {
+    // Flow rate manual override
+    flowRate = state.manualFlowRate;
+    
+    if (flowRate > maxFlowRate) {
+      flowRate = maxFlowRate;
+      isFlowRateClamped = true;
+    }
+    
+    state.injectionDuration = flowRate > 0 ? (contrastVolume / flowRate) : 12.0;
+
+    DOM.hrStatusMsg.textContent = isFlowRateClamped 
+      ? `已達到安全流速上限 ${maxFlowRate.toFixed(1)} mL/s (原設定 ${state.manualFlowRate.toFixed(1)} mL/s 觸發 IDR 限制)`
+      : `已手動調整注射流速為 ${flowRate.toFixed(1)} mL/s (覆蓋預設計算流速)`;
+    DOM.hrStatusInfo.className = isFlowRateClamped ? `hr-status-info fast` : `hr-status-info normal`;
+
+    // Sync UI Sliders
+    DOM.injectDurationSlider.value = Math.min(Math.max(state.injectionDuration, 8.0), 16.0);
+    DOM.injectDurationVal.textContent = `${state.injectionDuration.toFixed(1)}s`;
+    DOM.injectFlowRateSlider.value = flowRate;
+    DOM.injectFlowRateVal.textContent = `${flowRate.toFixed(1)} mL/s`;
+  } else if (state.isDurationManuallyOverridden) {
+    // Duration manual override
+    const manualDuration = parseFloat(DOM.injectDurationSlider.value);
+    state.injectionDuration = manualDuration;
+
+    const rawFlowRate = contrastVolume / state.injectionDuration;
+    flowRate = Math.round(rawFlowRate / 0.5) * 0.5;
+    if (rawFlowRate > 0 && flowRate < 1.0) flowRate = 1.0;
+    if (rawFlowRate === 0) flowRate = 0;
+
+    if (flowRate > maxFlowRate) {
+      flowRate = maxFlowRate;
+      isFlowRateClamped = true;
+      state.injectionDuration = flowRate > 0 ? (contrastVolume / flowRate) : manualDuration;
+    }
+
+    DOM.hrStatusMsg.textContent = isFlowRateClamped 
+      ? `已達到安全流速上限 ${maxFlowRate.toFixed(1)} mL/s (原設定時間 ${manualDuration.toFixed(1)}s 觸發 IDR 限制)`
+      : `已手動調整注射時間為 ${manualDuration.toFixed(1)} 秒 (覆蓋心率預設)`;
+    DOM.hrStatusInfo.className = isFlowRateClamped ? `hr-status-info fast` : `hr-status-info normal`;
+
+    // Sync UI Sliders
+    DOM.injectDurationSlider.value = Math.min(Math.max(state.injectionDuration, 8.0), 16.0);
+    DOM.injectDurationVal.textContent = `${state.injectionDuration.toFixed(1)}s`;
+    DOM.injectFlowRateSlider.value = Math.min(Math.max(flowRate, 1.0), 8.0);
+    DOM.injectFlowRateVal.textContent = `${flowRate.toFixed(1)} mL/s`;
+  } else {
+    // Heart rate automatic adaptation
     let duration = 12.0;
     let hrClass = "normal";
     let hrMessage = "心跳正常 (常規 12 秒注射)";
@@ -241,18 +378,28 @@ function updateCalculations() {
     }
     
     state.injectionDuration = duration;
-    DOM.hrStatusMsg.textContent = hrMessage;
-    DOM.hrStatusInfo.className = `hr-status-info ${hrClass}`;
-    
-    // Sync to advanced duration slider in UI
-    DOM.injectDurationSlider.value = duration;
-    DOM.injectDurationVal.textContent = `${duration.toFixed(1)}s`;
-  } else {
-    // If manually overridden by dragging the slider
-    const manualDuration = parseFloat(DOM.injectDurationSlider.value);
-    state.injectionDuration = manualDuration;
-    DOM.hrStatusMsg.textContent = `已手動調整注射時間為 ${manualDuration.toFixed(1)} 秒 (覆蓋心率預設)`;
-    DOM.hrStatusInfo.className = `hr-status-info normal`;
+
+    const rawFlowRate = contrastVolume / duration;
+    flowRate = Math.round(rawFlowRate / 0.5) * 0.5;
+    if (rawFlowRate > 0 && flowRate < 1.0) flowRate = 1.0;
+    if (rawFlowRate === 0) flowRate = 0;
+
+    if (flowRate > maxFlowRate) {
+      flowRate = maxFlowRate;
+      isFlowRateClamped = true;
+      state.injectionDuration = flowRate > 0 ? (contrastVolume / flowRate) : duration;
+    }
+
+    DOM.hrStatusMsg.textContent = isFlowRateClamped 
+      ? `已自動卡控安全流速上限 ${maxFlowRate.toFixed(1)} mL/s (防爆血管/降壓協定)`
+      : hrMessage;
+    DOM.hrStatusInfo.className = isFlowRateClamped ? `hr-status-info fast` : `hr-status-info ${hrClass}`;
+
+    // Sync UI Sliders
+    DOM.injectDurationSlider.value = Math.min(Math.max(state.injectionDuration, 8.0), 16.0);
+    DOM.injectDurationVal.textContent = `${state.injectionDuration.toFixed(1)}s`;
+    DOM.injectFlowRateSlider.value = Math.min(Math.max(flowRate, 1.0), 8.0);
+    DOM.injectFlowRateVal.textContent = `${flowRate.toFixed(1)} mL/s`;
   }
 
   // 4. Update intermediate UI values (in Advanced drawer)
@@ -300,38 +447,17 @@ function updateCalculations() {
     DOM.outVolume.textContent = "0";
     DOM.outFlowRate.textContent = "0.0";
     DOM.outSalineFlowRate.textContent = "0.0";
+    DOM.outDuration.textContent = "0.0";
     DOM.outIdr.textContent = "0.00";
     DOM.idrBadge.textContent = "LOCKED";
     DOM.idrBadge.className = "idr-badge warn";
+    DOM.durationBadge.textContent = "LOCKED";
+    DOM.durationBadge.className = "idr-badge warn";
+    DOM.obesityPanel.style.display = "none";
     return; // Stop rendering final results
   } else {
     DOM.lockOverlay.classList.remove("active");
     DOM.outputPanel.classList.remove("locked");
-  }
-
-  // 7. Calculate Final Dose Outputs based on Weight (linear scale)
-  let rawContrastVolume = iodineLoadWeightMg / contrastConc;
-  if (rawContrastVolume < 0 || isNaN(rawContrastVolume)) rawContrastVolume = 0;
-
-  // Apply clinical rounding: volume rounded to nearest 5 cc (minimum 20 cc to prevent underdose)
-  let contrastVolume = Math.round(rawContrastVolume / 5) * 5;
-  if (rawContrastVolume > 0 && contrastVolume < 20) {
-    contrastVolume = 20; // Clinical minimum safe threshold
-  }
-  if (rawContrastVolume === 0) {
-    contrastVolume = 0;
-  }
-
-  // Raw Injection Flow Rate (cc/s)
-  const rawFlowRate = contrastVolume / state.injectionDuration;
-
-  // Apply clinical rounding: flow rate rounded to nearest 0.5 cc/s (minimum 1.0 cc/s)
-  let flowRate = Math.round(rawFlowRate / 0.5) * 0.5;
-  if (rawFlowRate > 0 && flowRate < 1.0) {
-    flowRate = 1.0;
-  }
-  if (rawFlowRate === 0) {
-    flowRate = 0;
   }
 
   // Calculate actual duration based on rounded values
@@ -350,16 +476,55 @@ function updateCalculations() {
   
   DOM.outIdr.textContent = idr.toFixed(2);
 
-  // Check IDR limits and display warning badges
-  if (idr >= 1.4 && idr <= 1.8) {
-    DOM.idrBadge.textContent = "對比度極佳 (1.4-1.8 g/s)";
+  // Dynamic IDR Bounds check
+  if (isFlowRateClamped) {
+    DOM.idrBadge.textContent = `安全限流中 (${idr.toFixed(2)} g I/s)`;
+    DOM.idrBadge.className = "idr-badge warn";
+  } else if (idr >= idrRange.min && idr <= idrRange.max) {
+    DOM.idrBadge.textContent = `對比度極佳 (${idrRange.min.toFixed(1)}-${idrRange.max.toFixed(1)} g/s)`;
     DOM.idrBadge.className = "idr-badge safe";
-  } else if (idr < 1.4) {
-    DOM.idrBadge.textContent = "對比度可能不足 (<1.4 g/s)";
+  } else if (idr < idrRange.min) {
+    DOM.idrBadge.textContent = `對比度可能不足 (<${idrRange.min.toFixed(1)} g/s)`;
     DOM.idrBadge.className = "idr-badge warn";
   } else {
-    DOM.idrBadge.textContent = "對比劑流速過高 (>1.8 g/s)";
+    DOM.idrBadge.textContent = `流速過高 / 壓力偏高 (>${idrRange.max.toFixed(1)} g/s)`;
     DOM.idrBadge.className = "idr-badge warn";
+  }
+
+  // Target Injection Duration Check
+  if (actualDuration < 10.0) {
+    DOM.durationBadge.textContent = "過短 (掃描匹配警告)";
+    DOM.durationBadge.className = "idr-badge warn";
+  } else if (actualDuration >= 10.0 && actualDuration <= 14.0) {
+    DOM.durationBadge.textContent = "常用合理區間";
+    DOM.durationBadge.className = "idr-badge safe";
+  } else if (actualDuration > 14.0 && actualDuration <= 16.0) {
+    DOM.durationBadge.textContent = "一般正常";
+    DOM.durationBadge.className = "idr-badge safe";
+  } else {
+    DOM.durationBadge.textContent = "過長 (峰值變鈍警告)";
+    DOM.durationBadge.className = "idr-badge warn";
+  }
+
+  // 9. Display Obesity & Body Build Reference Panel
+  if (weight > 0) {
+    if (bmi < 18.5) {
+      DOM.obesityPanel.style.display = "block";
+      DOM.obesityComparison.innerHTML = `<div style="color: var(--color-warn); font-weight: 600;">⚠️ 體重過輕提示：已自動套用臨床最小安全劑量 20 mL。</div>`;
+    } else if (bmi >= 25) {
+      DOM.obesityPanel.style.display = "block";
+      DOM.obesityComparison.innerHTML = `
+        <div style="color: var(--color-warn); font-weight: 600; margin-bottom: 0.2rem;">⚖️ 已套用脂肪校正體重 (ABW) 進行劑量計算，以取得對比與造影安全平衡</div>
+        <div>• 依總體重 (TBW) 基準：<strong>${tbwVolume} mL</strong> ${isMorbidObesityCapApplied ? '<span style="color: var(--color-danger);">(已限制於 75 mL 上限)</span>' : ''}</div>
+        <div>• 依去脂體重 (LBM) 基準：<strong>${lbmVolume} mL</strong></div>
+        <div style="margin-top: 0.15rem; color: var(--color-safe);">• <strong>校正體重 (ABW) 建議：${adjVolume} mL (已採用)</strong></div>
+        ${isMorbidObesityCapApplied ? '<div style="margin-top: 0.25rem; font-weight: 500; color: var(--color-warn);">🚨 極度肥胖：劑量已限制於安全上限 75 mL，請於造影中加強 HU 品質追蹤。</div>' : ''}
+      `;
+    } else {
+      DOM.obesityPanel.style.display = "none";
+    }
+  } else {
+    DOM.obesityPanel.style.display = "none";
   }
 }
 
@@ -398,6 +563,7 @@ function loadPatientData(patient) {
   state.egfr = patient.egfr;
   state.isOverrideActive = false; // Reset override on new patient load
   state.isDurationManuallyOverridden = false; // Reset manually overridden duration
+  state.isFlowRateManuallyOverridden = false; // Reset manually overridden flow rate
   
   // Populate inputs in Form
   DOM.patientId.value = patient.id;
@@ -520,9 +686,10 @@ function setupEventListeners() {
       DOM.manualIndicator.style.display = "inline-block";
       DOM.scanStatus.innerHTML = `<i data-lucide="edit-3"></i> 檢測到手動修改參數。`;
       
-      // If heart rate is modified, reset duration override flag to let heart rate auto-adapt again
+      // If heart rate is modified, reset override flags to let heart rate auto-adapt again
       if (input === DOM.hr) {
         state.isDurationManuallyOverridden = false;
+        state.isFlowRateManuallyOverridden = false;
       }
 
       lucide.createIcons();
@@ -547,7 +714,20 @@ function setupEventListeners() {
 
   // Contrast agent & Scan Voltage changes
   DOM.contrastSelect.addEventListener("change", updateCalculations);
-  DOM.scanVoltage.addEventListener("change", updateCalculations);
+  DOM.scanVoltage.addEventListener("change", () => {
+    const kvp = parseInt(DOM.scanVoltage.value);
+    if (kvp === 70 || kvp === 80) {
+      state.weightCoefficient = 270;
+    } else if (kvp === 100) {
+      state.weightCoefficient = 300;
+    } else if (kvp === 120) {
+      state.weightCoefficient = 320;
+    }
+    // Sync slider value and label in UI
+    DOM.weightCoefSlider.value = state.weightCoefficient;
+    DOM.weightCoefVal.textContent = `${state.weightCoefficient} mg`;
+    updateCalculations();
+  });
 
   // Advanced setting sliders events
   DOM.weightCoefSlider.addEventListener("input", (e) => {
@@ -558,8 +738,17 @@ function setupEventListeners() {
 
   DOM.injectDurationSlider.addEventListener("input", (e) => {
     state.isDurationManuallyOverridden = true; // Mark as manually overridden
+    state.isFlowRateManuallyOverridden = false; // Clear flow rate override
     state.injectionDuration = parseFloat(e.target.value);
     DOM.injectDurationVal.textContent = `${state.injectionDuration.toFixed(1)}s`;
+    updateCalculations();
+  });
+
+  DOM.injectFlowRateSlider.addEventListener("input", (e) => {
+    state.isFlowRateManuallyOverridden = true; // Mark as manually overridden
+    state.isDurationManuallyOverridden = false; // Clear duration override
+    state.manualFlowRate = parseFloat(e.target.value);
+    DOM.injectFlowRateVal.textContent = `${state.manualFlowRate.toFixed(1)} mL/s`;
     updateCalculations();
   });
 

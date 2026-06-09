@@ -215,7 +215,8 @@
             <div class="detail-row">
               <span class="detail-lbl">實際注射秒數 (Volume / Rate)</span>
               <span class="detail-val">
-                <span id="outDuration">12.0</span> <span style="font-size:0.8rem; font-weight:normal; color:var(--text-muted);">秒</span>
+                <span id="outDuration">12.0</span> <span style="font-size:0.8rem; font-weight:normal; color:var(--text-muted); margin-right: 5px;">秒</span>
+                <span id="durationBadge" class="idr-badge safe">OK</span>
               </span>
             </div>
             <div class="detail-row">
@@ -224,6 +225,19 @@
                 <span id="outIdr">0.00</span> <span style="font-size:0.8rem; font-weight:normal; color:var(--text-muted); margin-right: 5px;">g I/s</span>
                 <span id="idrBadge" class="idr-badge safe">OK</span>
               </span>
+            </div>
+          </div>
+
+          <!-- Obesity & Body Build Reference Panel -->
+          <div id="obesityPanel" class="obesity-panel" style="margin-top: 0.8rem; padding-top: 0.8rem; border-top: 1px dashed var(--panel-border); display: none;">
+            <div class="panel-header" style="border-bottom: none; padding-bottom: 0.2rem; display: flex; justify-content: flex-start; gap: 0.4rem;">
+              <h3 style="font-size: 0.85rem; color: var(--color-warn); font-weight: 700; display: flex; align-items: center; gap: 0.25rem;">
+                <i data-lucide="scale" style="width: 15px; height: 15px;"></i>
+                <span>肥胖與體型修正參考 (需人工覆核)</span>
+              </h3>
+            </div>
+            <div id="obesityComparison" style="margin-top: 0.4rem; font-size: 0.78rem; display: flex; flex-direction: column; gap: 0.35rem; color: var(--text-secondary); line-height: 1.4;">
+              <!-- Dynamic Content -->
             </div>
           </div>
         </section>
@@ -287,6 +301,14 @@
                 <span id="injectDurationVal" class="slider-val">12s</span>
               </div>
               <input type="range" id="injectDurationSlider" class="range-ctrl" min="8" max="16" value="12" step="0.5">
+            </div>
+
+            <div class="slider-group">
+              <div class="slider-header">
+                <span>目標注射流速 (手動覆蓋計算流速)</span>
+                <span id="injectFlowRateVal" class="slider-val">4.0 mL/s</span>
+              </div>
+              <input type="range" id="injectFlowRateSlider" class="range-ctrl" min="1.0" max="8.0" value="4.0" step="0.5">
             </div>
 
             <div class="slider-group">
